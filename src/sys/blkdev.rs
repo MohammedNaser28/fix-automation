@@ -65,15 +65,3 @@ pub fn get_disks() -> Vec<DiskInfo> {
 }
 
 
-// pub fn get_disks_1() -> Vec<DiskInfo> {
-//     // Fake data so your UI has something to show in the table
-//     vec![
-//         DiskInfo { name: "nvme0n1p1".into(), size: "512M".into(), fstype:"ext4".into(), label: None, is_efi: false, contents: None },
-//         DiskInfo { name: "nvme0n1p2".into(), size: "400G".into(),fstype:"ext4".into(), label: None, is_efi: false, contents: None },
-//         DiskInfo { name: "nvme0n1p3".into(), size: "512M".into(), fstype:"vfat".into(), label: None, is_efi: true, contents: None },
-//         DiskInfo { name: "nvme0n1p4".into(), size: "400G".into(),fstype:"fat32".into(), label: None, is_efi: true, contents: None },
-//         DiskInfo { name: "nvme0n1p5".into(), size: "512M".into(), fstype:"ntfs".into(), label: None, is_efi: false, contents: None },
-//         DiskInfo { name: "nvme0n1p6".into(), size: "400G".into(),fstype:"exfat".into(), label: None, is_efi: false, contents: None },
-//         DiskInfo { name: "sda1".into(), size: "1T".into() ,fstype:"ext4".into(), label: None, is_efi: false, contents: None},
-//     ]
-// }
