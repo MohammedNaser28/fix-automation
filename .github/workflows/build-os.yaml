@@ -1,0 +1,52 @@
+name: Build Bootable OS
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  build-os:
+    name: Compile Buildroot OS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: fix-automation
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make gcc g++ unzip git bc python3 device-tree-compiler mtools parted dosfstools cpio rsync wget
+
+      - name: Download Buildroot
+        run: |
+          wget https://buildroot.org/downloads/buildroot-2025.02.13.tar.gz
+          tar -xf buildroot-2025.02.13.tar.gz
+          mv buildroot-2025.02.13 buildroot
+
+      - name: Build OS
+        run: |
+          cd buildroot
+          # Point Buildroot to your external tree
+          make BR2_EXTERNAL=../fix-automation/os-config linux_rescue_defconfig
+          # Compile the OS
+          make -j$(nproc)
+
+      - name: Package Bootable ZIP
+        run: |
+          mkdir -p release/EFI/BOOT
+          # Copy Kernel and RootFS
+          cp buildroot/output/images/bzImage release/EFI/BOOT/
+          cp buildroot/output/images/rootfs.cpio.gz release/EFI/BOOT/
+          cd release
+          zip -r ../grub-rescue-usb.zip *
+
+      - name: Upload Bootable USB ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: grub-rescue-usb
+          path: grub-rescue-usb.zip
+          retention-days: 7
