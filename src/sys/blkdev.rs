@@ -8,6 +8,7 @@ pub struct DiskInfo {
     pub size: String,
     pub fstype: Option<String>,
     pub label: Option<String>,
+    pub uuid: Option<String>,
     pub mountpoint: Option<String>,
     pub is_efi: bool,
     pub contents: Option<String>,
@@ -25,13 +26,14 @@ struct BlockDevice {
     size: String,
     fstype: Option<String>,
     label: Option<String>,
+    uuid: Option<String>,
     mountpoint: Option<String>,
     children: Option<Vec<BlockDevice>>,
 }
 
 pub fn get_disks() -> Vec<DiskInfo> {
     let output = Command::new("lsblk")
-        .args(["--json", "-o", "NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT"])
+        .args(["--json", "-o", "NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT"])
         .output()
         .expect("failed to execute lsblk");
 
@@ -53,6 +55,7 @@ pub fn get_disks() -> Vec<DiskInfo> {
                     size: part.size,
                     fstype: part.fstype,
                     label: part.label,
+                    uuid: part.uuid,
                     mountpoint: part.mountpoint,
                     is_efi,
                     // We initialize this as None.
