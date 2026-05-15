@@ -25,6 +25,16 @@ pub fn render(f: &mut Frame, app: &mut App) {
         Line::from(""),
     ];
 
+    if !app.diagnosis_summary.is_empty() {
+        for msg in &app.diagnosis_summary {
+            lines.push(Line::from(vec![
+                Span::raw("  "),
+                Span::styled(msg.clone(), Style::default().fg(THEME.yellow)),
+            ]));
+        }
+        lines.push(Line::from(""));
+    }
+
     let section_labels = ["repair", "disk", "help"];
     let mut section_idx = 0;
 
@@ -56,8 +66,10 @@ pub fn render(f: &mut Frame, app: &mut App) {
                 };
 
                 // Build tag or description span
+                let is_recommended = app.recommended_action.as_ref() == Some(action);
+
                 let tag_span = match action {
-                    crate::app::Action::FixGrubAndFstab => {
+                    _ if is_recommended => {
                         Span::styled(" [recommended]", Style::default().fg(THEME.green))
                     }
                     crate::app::Action::OpenChrootShell => {

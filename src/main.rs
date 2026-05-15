@@ -130,8 +130,7 @@ fn handle_input(app: &mut App, code: KeyCode) {
                 KeyCode::Enter => {
                     match app.confirm_focus {
                         ConfirmFocus::Confirm => {
-                            app.action_cursor = ACTION_ITEMS.iter().position(|i| i.is_some()).unwrap_or(0);
-                            app.current_screen = CurrentScreen::ActionMenu;
+                            app.start_diagnosis();
                         }
                         ConfirmFocus::Back => {
                             app.table_state.select(Some(0));
@@ -169,11 +168,61 @@ fn handle_input(app: &mut App, code: KeyCode) {
             }
         }
 
+        CurrentScreen::DiagnoseLog => {
+            match code {
+                KeyCode::Enter if app.exec_done => {
+                    app.action_cursor = ACTION_ITEMS.iter().position(|i| i.is_some()).unwrap_or(0);
+                    app.current_screen = CurrentScreen::ActionMenu;
+                }
+                KeyCode::Char('q') => app.should_quit = true,
+                _ => {}
+            }
+        }
+
         CurrentScreen::ExecLog => {
             match code {
-                // When done, Enter returns to action menu
+                // When done, Enter returns to Result screen
                 KeyCode::Enter if app.exec_done => {
-                    app.current_screen = CurrentScreen::ActionMenu;
+                    app.result_cursor = 0; // default to back to menu
+                    app.current_screen = CurrentScreen::Result;
+                }
+                KeyCode::Char('q') => app.should_quit = true,
+                _ => {}
+            }
+        }
+
+        CurrentScreen::Result => {
+            match code {
+                KeyCode::Left => {
+                    if app.result_cursor > 0 { app.result_cursor -= 1; }
+                }
+                KeyCode::Right => {
+                    if app.result_cursor < 2 { app.result_cursor += 1; }
+                }
+                KeyCode::Enter => {
+                    match app.result_cursor {
+                        0 => { // back to menu
+                            app.current_screen = CurrentScreen::ActionMenu;
+                        }
+                        1 => { // reboot
+                            let _ = std::process::Command::new("reboot").status();
+                            app.should_quit = true;
+                        }
+                        2 => { // export logs
+                            app.current_screen = CurrentScreen::LogExport;
+                        }
+                        _ => {}
+                    }
+                }
+                KeyCode::Char('q') => app.should_quit = true,
+                _ => {}
+            }
+        }
+
+        CurrentScreen::LogExport => {
+            match code {
+                KeyCode::Enter | KeyCode::Esc => {
+                    app.current_screen = CurrentScreen::Result;
                 }
                 KeyCode::Char('q') => app.should_quit = true,
                 _ => {}

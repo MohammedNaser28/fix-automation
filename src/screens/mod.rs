@@ -9,6 +9,8 @@ pub mod select_efi;
 pub mod confirm;
 pub mod action_menu;
 pub mod exec_log;
+pub mod results;
+pub mod log_export;
 
 pub fn render(f: &mut Frame, app: &mut App) {
     match app.current_screen {
@@ -17,6 +19,9 @@ pub fn render(f: &mut Frame, app: &mut App) {
         CurrentScreen::SelectEfi => select_efi::render(f, app),
         CurrentScreen::Confirm => confirm::render(f, app),
         CurrentScreen::ActionMenu => action_menu::render(f, app),
+        CurrentScreen::DiagnoseLog => exec_log::render(f, app),
         CurrentScreen::ExecLog => exec_log::render(f, app),
+        CurrentScreen::Result => results::render(f, app),
+        CurrentScreen::LogExport => log_export::render(f, app),
     }
 }

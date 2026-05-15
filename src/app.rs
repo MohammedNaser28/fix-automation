@@ -11,7 +11,10 @@ pub enum CurrentScreen {
     SelectEfi,
     Confirm,
     ActionMenu,
+    DiagnoseLog,
     ExecLog,
+    Result,
+    LogExport,
 }
 
 // ─── Confirm focus ────────────────────────────────────────────────────────────
@@ -92,6 +95,7 @@ pub enum LogKind {
     Ok,      // ✓ green
     Warn,    // ⚠ yellow
     Error,   // ✗ red
+    DiagnosisResult(Vec<String>, Option<Action>),
     Done,    // internal signal — repair finished
 }
 
@@ -131,6 +135,8 @@ pub struct App {
     // Action menu
     pub action_cursor:   usize,
     pub selected_action: Option<Action>,
+    pub diagnosis_summary: Vec<String>,
+    pub recommended_action: Option<Action>,
 
     // Execution log
     pub log_lines:  Vec<LogLine>,
@@ -138,6 +144,10 @@ pub struct App {
     pub exec_total: usize,
     pub exec_done:  bool,
     pub log_rx:     Option<Receiver<LogLine>>,
+
+    // Result & Export
+    pub result_cursor: usize,
+    pub export_cursor: usize,
 }
 
 impl App {
@@ -168,12 +178,17 @@ impl App {
 
             action_cursor:   first,
             selected_action: None,
+            diagnosis_summary: Vec::new(),
+            recommended_action: None,
 
             log_lines:  Vec::new(),
             exec_step:  0,
             exec_total: 7,
             exec_done:  false,
             log_rx:     None,
+
+            result_cursor: 0,
+            export_cursor: 0,
         }
     }
 
@@ -256,7 +271,14 @@ impl App {
         let mut done = false;
         if let Some(ref rx) = self.log_rx {
             while let Ok(line) = rx.try_recv() {
-                if line.kind == LogKind::Done { done = true; } else { new_lines.push(line); }
+                if let LogKind::DiagnosisResult(summary, rec) = line.kind.clone() {
+                    self.diagnosis_summary = summary;
+                    self.recommended_action = rec;
+                } else if line.kind == LogKind::Done { 
+                    done = true; 
+                } else { 
+                    new_lines.push(line); 
+                }
             }
         }
         for line in new_lines {
@@ -267,6 +289,27 @@ impl App {
             self.exec_done = true;
             self.log_rx = None;
         }
+    }
+
+    // ── Start diagnosis — spawn background thread, switch to DiagnoseLog ──────
+
+    pub fn start_diagnosis(&mut self) {
+        let root = match &self.selected_root { Some(d) => d.clone(), None => return };
+        let efi  = self.selected_efi.clone();
+        let is_uefi = self.is_uefi;
+        let disks = self.disks.clone();
+
+        let (tx, rx) = std::sync::mpsc::channel::<LogLine>();
+        self.log_rx     = Some(rx);
+        self.log_lines  .clear();
+        self.exec_step  = 0;
+        self.exec_done  = false;
+        self.exec_total = 4; // mount, detect, check grub, check fstab
+        self.current_screen = CurrentScreen::DiagnoseLog;
+
+        std::thread::spawn(move || {
+            crate::repair::run_diagnosis(tx, root, efi, is_uefi, disks);
+        });
     }
 
     // ── Start repair — spawn background thread, switch to ExecLog ─────────────

@@ -10,7 +10,14 @@ use crate::ui::{theme::THEME, widgets};
 
 pub fn render(f: &mut Frame, app: &mut App) {
     let action_label = app.selected_action.map(|a| a.label()).unwrap_or("repair");
-    let chunks = widgets::draw_layout(f, &action_label.to_uppercase());
+    
+    let title = if app.current_screen == crate::app::CurrentScreen::DiagnoseLog {
+        "SYSTEM DIAGNOSIS"
+    } else {
+        &action_label.to_uppercase()
+    };
+    
+    let chunks = widgets::draw_layout(f, title);
 
     let distro = app.heuristic_distro();
 
