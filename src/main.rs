@@ -4,16 +4,15 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::io;
-use crate::app::ConfirmFocus;
-// mod app;
+use std::{io, time::Duration};
+
 mod screens;
 mod sys;
 mod app;
 mod ui;
-// mod ui;
+mod repair;
 
-use crate::app::{App, CurrentScreen};
+use crate::app::{App, CurrentScreen, ConfirmFocus, ACTION_ITEMS};
 
 fn main() -> Result<(), io::Error> {
     // Terminal Setup
@@ -23,18 +22,21 @@ fn main() -> Result<(), io::Error> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Application State
+    // Application State — disks, firmware, network loaded in App::new()
     let mut app = App::new();
 
     // Main Loop
     loop {
         terminal.draw(|f| screens::render(f, &mut app))?;
 
-        if let Event::Key(key) = event::read()? {
-            if key.code == KeyCode::Char('q') { break; }
+        // Drain any log lines from the running repair thread
+        app.drain_log();
 
-            // Delegate input handling to screens
-            handle_input(&mut app, key.code);
+        // Poll with timeout so the repair thread output updates the UI in real-time
+        if event::poll(Duration::from_millis(50))? {
+            if let Event::Key(key) = event::read()? {
+                handle_input(&mut app, key.code);
+            }
         }
 
         if app.should_quit { break; }
@@ -48,66 +50,134 @@ fn main() -> Result<(), io::Error> {
 
 fn handle_input(app: &mut App, code: KeyCode) {
     match app.current_screen {
+
         CurrentScreen::Welcome => {
-            if code == KeyCode::Enter {
-                app.disks = sys::blkdev::get_disks();
-                app.current_screen = CurrentScreen::SelectRoot;
-                app.table_state.select(Some(0)); // Start at first disk
+            match code {
+                KeyCode::Enter => {
+                    app.current_screen = CurrentScreen::SelectRoot;
+                    app.table_state.select(Some(0));
+                }
+                KeyCode::Char('q') => app.should_quit = true,
+                _ => {}
             }
         }
+
         CurrentScreen::SelectRoot => {
             match code {
-                KeyCode::Up => app.select_previous(),
-                KeyCode::Down => app.select_next(),
+                KeyCode::Up    => app.select_previous(),
+                KeyCode::Down  => app.select_next(),
                 KeyCode::Enter => {
                     if let Some(i) = app.table_state.selected() {
-                        app.selected_root = Some(app.disks[i].clone());
-                        app.current_screen = CurrentScreen::SelectEfi;
-                        app.table_state.select(Some(0)); // Reset for next screen
+                        if i < app.disks.len() {
+                            app.selected_root = Some(app.disks[i].clone());
+                            app.current_screen = CurrentScreen::SelectEfi;
+                            app.table_state.select(Some(0));
+                        }
                     }
                 }
+                KeyCode::Char('q') => app.should_quit = true,
                 _ => {}
             }
         }
+
         CurrentScreen::SelectEfi => {
+            let efi_disks: Vec<&crate::sys::blkdev::DiskInfo> =
+                app.disks.iter().filter(|d| d.is_efi).collect();
+            let efi_count = efi_disks.len();
+
             match code {
-                KeyCode::Up => app.select_previous(),
-                KeyCode::Down => app.select_next(),
-                KeyCode::Enter => {
-                    if let Some(i) = app.table_state.selected() {
-                        app.selected_efi = Some(app.disks[i].clone());
-                        app.current_screen = CurrentScreen::Confirm;
+                KeyCode::Up => {
+                    if efi_count > 0 {
+                        let i = match app.table_state.selected() {
+                            Some(i) => if i == 0 { efi_count - 1 } else { i - 1 },
+                            None    => 0,
+                        };
+                        app.table_state.select(Some(i));
                     }
                 }
-                KeyCode::Esc => app.current_screen = CurrentScreen::SelectRoot,
+                KeyCode::Down => {
+                    if efi_count > 0 {
+                        let i = match app.table_state.selected() {
+                            Some(i) => if i >= efi_count - 1 { 0 } else { i + 1 },
+                            None    => 0,
+                        };
+                        app.table_state.select(Some(i));
+                    }
+                }
+                KeyCode::Enter => {
+                    if let Some(i) = app.table_state.selected() {
+                        if i < efi_count {
+                            app.selected_efi = Some((*efi_disks[i]).clone());
+                            app.table_state.select(Some(0));
+                            app.current_screen = CurrentScreen::Confirm;
+                        }
+                    }
+                }
+                KeyCode::Esc => {
+                    app.table_state.select(Some(0));
+                    app.current_screen = CurrentScreen::SelectRoot;
+                }
+                KeyCode::Char('q') => app.should_quit = true,
                 _ => {}
             }
         }
+
         CurrentScreen::Confirm => {
             match code {
                 KeyCode::Left | KeyCode::Right | KeyCode::Tab => {
                     app.toggle_confirm_buttons();
                 }
-
                 KeyCode::Enter => {
                     match app.confirm_focus {
                         ConfirmFocus::Confirm => {
+                            app.action_cursor = ACTION_ITEMS.iter().position(|i| i.is_some()).unwrap_or(0);
                             app.current_screen = CurrentScreen::ActionMenu;
                         }
                         ConfirmFocus::Back => {
+                            app.table_state.select(Some(0));
                             app.current_screen = CurrentScreen::SelectEfi;
                         }
                     }
                 }
-
                 KeyCode::Esc => {
+                    app.table_state.select(Some(0));
                     app.current_screen = CurrentScreen::SelectEfi;
                 }
-
+                KeyCode::Char('q') => app.should_quit = true,
                 _ => {}
             }
         }
-        CurrentScreen::ActionMenu => {}
-        CurrentScreen::ExecLog    => {}
+
+        CurrentScreen::ActionMenu => {
+            match code {
+                KeyCode::Up    => app.action_prev(),
+                KeyCode::Down  => app.action_next(),
+                KeyCode::Enter => {
+                    if let Some(action) = ACTION_ITEMS[app.action_cursor] {
+                        if action.is_available() {
+                            app.selected_action = Some(action);
+                            app.start_repair();
+                        }
+                        // Post-MVP items: do nothing (shown grayed in UI)
+                    }
+                }
+                KeyCode::Esc => {
+                    app.current_screen = CurrentScreen::Confirm;
+                }
+                KeyCode::Char('q') => app.should_quit = true,
+                _ => {}
+            }
+        }
+
+        CurrentScreen::ExecLog => {
+            match code {
+                // When done, Enter returns to action menu
+                KeyCode::Enter if app.exec_done => {
+                    app.current_screen = CurrentScreen::ActionMenu;
+                }
+                KeyCode::Char('q') => app.should_quit = true,
+                _ => {}
+            }
+        }
     }
 }

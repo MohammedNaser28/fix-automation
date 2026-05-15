@@ -1,23 +1,26 @@
-use ratatui::style::{Color, Style, Modifier};
-
+use ratatui::style::Color;
 pub struct Theme {
-    pub base: Style,
-    pub border: Style,
-    pub title: Style,
-    pub highlight: Style,
-    pub success: Color,
-    pub error: Color,
-    pub warning: Color,
-    pub titleColor: Color,
+    pub background: Color,
+    pub cyan:       Color,
+    pub green:      Color,
+    pub yellow:     Color,
+    pub red:        Color,
+    pub purple:     Color,
+    pub orange:     Color,
+    pub comment:    Color,    // dim text
+    pub foreground: Color,
+    pub selection:  Color,
 }
 
-pub const DRACULA: Theme = Theme {
-    base: Style::new().fg(Color::Rgb(248, 248, 242)).bg(Color::Rgb(40, 42, 54)),
-    border: Style::new().fg(Color::Rgb(98, 114, 164)),
-    title: Style::new().fg(Color::Rgb(189, 147, 249)).add_modifier(Modifier::BOLD),
-    titleColor: Color::Rgb(189, 147, 249),
-    highlight: Style::new().bg(Color::Rgb(68, 71, 90)).fg(Color::Rgb(255, 121, 198)),
-    success: Color::Rgb(80, 250, 123),
-    error: Color::Rgb(255, 85, 85),
-    warning: Color::Rgb(241, 250, 140),
+pub const THEME: Theme = Theme {
+    background: Color::Rgb(13,  17,  23),
+    cyan:       Color::Rgb(121, 192, 255),
+    green:      Color::Rgb(86,  211, 100),
+    yellow:     Color::Rgb(227, 179, 65),
+    red:        Color::Rgb(248, 81,  73),
+    purple:     Color::Rgb(210, 168, 255),
+    orange:     Color::Rgb(255, 166, 87),
+    comment:    Color::Rgb(139, 148, 158),
+    foreground: Color::Rgb(230, 237, 243),
+    selection:  Color::Rgb(31,  58,  95),
 };
