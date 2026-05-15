@@ -3,7 +3,6 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use crate::sys::chroot;
 use crate::sys::distros::Distro;
-use std::process::Command;
 pub enum BootType {
     Efi { efi_mount_inside_chroot: String },
     Bios { target_disk: String },

@@ -1,5 +1,5 @@
-use std::process::Command;
 use serde::Deserialize;
+use std::process::Command;
 
 // 1. The struct used by your UI (no Serde tags needed here)
 #[derive(Clone, Debug)]
@@ -35,8 +35,9 @@ pub fn get_disks() -> Vec<DiskInfo> {
         .output()
         .expect("failed to execute lsblk");
 
-    let decoded: LsblkOutput = serde_json::from_slice(&output.stdout)
-        .unwrap_or(LsblkOutput { blockdevices: vec![] });
+    let decoded: LsblkOutput = serde_json::from_slice(&output.stdout).unwrap_or(LsblkOutput {
+        blockdevices: vec![],
+    });
 
     let mut disks = Vec::new();
 
@@ -56,12 +57,14 @@ pub fn get_disks() -> Vec<DiskInfo> {
                     is_efi,
                     // We initialize this as None.
                     // You'll fill this in later when you scan the EFI partition.
-                    contents: if is_efi { Some("Scanning...".into()) } else { None },
+                    contents: if is_efi {
+                        Some("Scanning...".into())
+                    } else {
+                        None
+                    },
                 });
             }
         }
     }
     disks
 }
-
-

@@ -1,8 +1,9 @@
 pub mod blkdev;
-mod mount;
-mod grub;
-mod distros;
-mod fstab;
+pub mod mount;
+pub mod grub;
+pub mod distros;
+pub mod fstab;
+pub mod firmware;
+pub mod network;
 mod systemd;
-mod chroot;
-// Add other modules here as you need them (fstab, grub, etc.)
+pub mod chroot;
