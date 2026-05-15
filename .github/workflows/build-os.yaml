@@ -27,6 +27,14 @@ jobs:
           tar -xf buildroot-2025.02.13.tar.gz
           mv buildroot-2025.02.13 buildroot
 
+      - name: Cache Buildroot Downloads
+        uses: actions/cache@v4
+        with:
+          path: buildroot/dl
+          key: ${{ runner.os }}-buildroot-dl
+          restore-keys: |
+            ${{ runner.os }}-buildroot-dl
+
       - name: Build OS
         run: |
           cd buildroot
