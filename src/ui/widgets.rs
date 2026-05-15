@@ -1,0 +1,30 @@
+use ratatui::{
+    layout::{Constraint, Direction, Layout, Rect},
+    widgets::{Block, Borders, Paragraph},
+    Frame,
+};
+use crate::ui::theme::DRACULA;
+
+pub fn draw_layout(f: &mut Frame, title: &str) -> Vec<Rect> {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Header
+            Constraint::Min(0),    // Main Content
+            Constraint::Length(3), // Footer
+        ])
+        .split(f.size());
+
+    // Render Global Header
+    let header = Paragraph::new(format!(" GRUB-RESCUE v0.1.0 | Current: {}", title))
+        .block(Block::default().borders(Borders::ALL).border_style(DRACULA.border))
+        .style(DRACULA.title);
+    f.render_widget(header, chunks[0]);
+
+    // Render Global Footer
+    let footer = Paragraph::new(" [Q] Quit | [Enter] Next | [Esc] Back ")
+        .block(Block::default().borders(Borders::ALL).border_style(DRACULA.border));
+    f.render_widget(footer, chunks[2]);
+
+    chunks.to_vec()
+}
