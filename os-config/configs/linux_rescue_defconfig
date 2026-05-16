@@ -1,17 +1,74 @@
+# Target
 BR2_x86_64=y
+
+# Toolchain
 BR2_TOOLCHAIN_BUILDROOT_MUSL=y
+
+# Kernel headers
 BR2_LINUX_KERNEL_NEEDS_HOST_LIBELF=y
 BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
-#BR2_KERNEL_HEADERS_AS_KERNEL=y
 BR2_KERNEL_HEADERS_6_12=y
-BR2_PACKAGE_HOST_RUSTC=y
-BR2_PACKAGE_FIX_AUTOMATION=y
-BR2_PACKAGE_EFIBOOTMGR=y
+
+# Kernel
 BR2_LINUX_KERNEL=y
 BR2_LINUX_KERNEL_CUSTOM_VERSION=y
 BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE="6.12.81"
 BR2_LINUX_KERNEL_USE_ARCH_DEFAULT_CONFIG=y
 BR2_LINUX_KERNEL_BZIMAGE=y
+
+# Init — your binary IS init, no init system needed
+BR2_INIT_NONE=y
+
+# Core utils
+BR2_PACKAGE_BUSYBOX=y
+BR2_PACKAGE_UTIL_LINUX=y
+BR2_PACKAGE_UTIL_LINUX_BINARIES=y        # lsblk, blkid, findmnt
+BR2_PACKAGE_UTIL_LINUX_MOUNT=y           # mount/umount
+
+# chroot support — comes from busybox, but also need:
+BR2_PACKAGE_BUSYBOX_CONFIG_FRAGMENT_FILES="" # default busybox config is fine
+# make sure these are enabled in busybox config:
+# CONFIG_CHROOT=y
+# CONFIG_MOUNT=y
+# CONFIG_UMOUNT=y
+
+# GRUB repair tools
+BR2_PACKAGE_GRUB2=y
+BR2_PACKAGE_GRUB2_TARGET_I386_PC=y       # BIOS support
+BR2_PACKAGE_GRUB2_TARGET_X86_64_EFI=y   # UEFI support
+
+# EFI boot manager
+BR2_PACKAGE_EFIBOOTMGR=y
+
+# os-prober — detects other OSes for grub-mkconfig
+BR2_PACKAGE_OS_PROBER=y
+
+# Partition management
+BR2_PACKAGE_PARTED=y
+BR2_PACKAGE_E2FSPROGS=y                  # resize2fs for ext4
+BR2_PACKAGE_BTRFS_PROGS=y               # btrfs resize
+BR2_PACKAGE_XFS_PROGS=y                 # xfs_growfs
+BR2_PACKAGE_DOSFSTOOLS=y                # mkfs.vfat for EFI
+
+# Windows NTFS (for Windows EFI restore)
+BR2_PACKAGE_NTFS_3G=y
+
+# Network — for paste upload + AI diagnosis
+BR2_PACKAGE_DHCPCD=y                    # DHCP client, auto IP on boot
+BR2_PACKAGE_CURL=y                      # upload logs to paste.rs
+BR2_PACKAGE_CA_CERTIFICATES=y          # HTTPS cert validation for curl
+
+# QR code export
+BR2_PACKAGE_QRENCODE=y
+
+# Your package
+BR2_PACKAGE_FIX_AUTOMATION=y
+
+# Filesystem output
 BR2_TARGET_ROOTFS_CPIO=y
 BR2_TARGET_ROOTFS_CPIO_GZIP=y
 
+# USB bootloader
+BR2_TARGET_GRUB2=y
+BR2_TARGET_GRUB2_I386_PC=y
+BR2_TARGET_GRUB2_X86_64_EFI=y
