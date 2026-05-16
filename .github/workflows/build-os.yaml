@@ -83,44 +83,48 @@ jobs:
       # ── Package ───────────────────────────────────────────────────────────
       - name: Package bootable ZIP
         run: |
-            mkdir -p release/EFI/BOOT
-            
-            cp buildroot/output/images/bzImage        release/EFI/BOOT/
-            cp buildroot/output/images/rootfs.cpio.gz release/EFI/BOOT/
-            
-            # 2. Deploy the EFI Bootloader
-            if [ -f buildroot/output/images/grub-efi.bin ]; then
-              cp buildroot/output/images/grub-efi.bin release/EFI/BOOT/BOOTX64.EFI
-            else
-              echo "❌ ERROR: grub-efi.bin not found! Check defconfig."
-              exit 1
-            fi
-            
-            # 3. Create the GRUB config
-            cat > release/EFI/BOOT/grub.cfg << 'EOF'
-            set timeout=5
-            set default=0
-            menuentry "Fix-Automation Rescue (Rust)" {
-                linux  /EFI/BOOT/bzImage quiet console=tty0
-                initrd /EFI/BOOT/rootfs.cpio.gz
-            }
-            EOF
-            
-            cd release && zip -r ../grub-rescue-usb.zip .
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: grub-rescue-usb
-          path: grub-rescue-usb.zip
-          retention-days: 7
+          mkdir -p release/EFI/BOOT
 
-      # ── Release (only on git tag) ─────────────────────────────────────────
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            grub-rescue-usb.zip
-            fix-automation/target/x86_64-unknown-linux-musl/release/fix-automation
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          cp buildroot/output/images/bzImage        release/EFI/BOOT/
+          cp buildroot/output/images/rootfs.cpio.gz release/EFI/BOOT/
+
+          # Deploy the EFI bootloader (output path from BR2_TARGET_GRUB2_X86_64_EFI)
+          EFI_BIN="buildroot/output/images/efi-part/EFI/BOOT/bootx64.efi"
+          if [ -f "$EFI_BIN" ]; then
+            cp "$EFI_BIN" release/EFI/BOOT/BOOTX64.EFI
+          else
+            echo "❌ ERROR: GRUB EFI binary not found at $EFI_BIN"
+            echo "Available images:"
+            find buildroot/output/images/ -type f | sort
+            exit 1
+          fi
+
+          # Create the GRUB config
+          cat > release/EFI/BOOT/grub.cfg << 'EOF'
+  set timeout=5
+  set default=0
+  menuentry "Fix-Automation Rescue (Rust)" {
+  linux  /EFI/BOOT/bzImage quiet console=tty0
+  initrd /EFI/BOOT/rootfs.cpio.gz
+}
+  EOF
+  
+  cd release && zip -r ../grub-rescue-usb.zip .
+
+- name: Upload artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: grub-rescue-usb
+    path: grub-rescue-usb.zip
+    retention-days: 7
+
+# ── Release (only on git tag) ─────────────────────────────────────────
+- name: Create GitHub Release
+  uses: softprops/action-gh-release@v2
+  if: startsWith(github.ref, 'refs/tags/')
+  with:
+    files: |
+      grub-rescue-usb.zip
+      fix-automation/target/x86_64-unknown-linux-musl/release/fix-automation
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
