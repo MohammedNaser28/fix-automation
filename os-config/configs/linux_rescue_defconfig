@@ -1,75 +1,68 @@
-# Target
+# ── Target ────────────────────────────────────────────────────────────────────
 BR2_x86_64=y
 
-# Toolchain
+# ── Toolchain ─────────────────────────────────────────────────────────────────
 BR2_TOOLCHAIN_BUILDROOT_MUSL=y
 
-# Kernel headers
+# ── Kernel headers ────────────────────────────────────────────────────────────
 BR2_LINUX_KERNEL_NEEDS_HOST_LIBELF=y
 BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
 BR2_KERNEL_HEADERS_6_12=y
 
-# Kernel
+# ── Kernel ────────────────────────────────────────────────────────────────────
 BR2_LINUX_KERNEL=y
 BR2_LINUX_KERNEL_CUSTOM_VERSION=y
 BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE="6.12.81"
 BR2_LINUX_KERNEL_USE_ARCH_DEFAULT_CONFIG=y
 BR2_LINUX_KERNEL_BZIMAGE=y
 
-# Init — your binary IS init, no init system needed
+# ── Init ──────────────────────────────────────────────────────────────────────
+# Your Rust binary IS init — no init system needed
 BR2_INIT_NONE=y
 
-# Core utils
+# ── Core utils ────────────────────────────────────────────────────────────────
 BR2_PACKAGE_BUSYBOX=y
 BR2_PACKAGE_UTIL_LINUX=y
-BR2_PACKAGE_UTIL_LINUX_BINARIES=y        # lsblk, blkid, findmnt
-BR2_PACKAGE_UTIL_LINUX_MOUNT=y           # mount/umount
+BR2_PACKAGE_UTIL_LINUX_BINARIES=y   # lsblk, blkid, findmnt
+BR2_PACKAGE_UTIL_LINUX_MOUNT=y      # mount/umount
 
-# chroot support — comes from busybox, but also need:
-BR2_PACKAGE_BUSYBOX_CONFIG_FRAGMENT_FILES="" # default busybox config is fine
-# make sure these are enabled in busybox config:
-# CONFIG_CHROOT=y
-# CONFIG_MOUNT=y
-# CONFIG_UMOUNT=y
-
-# GRUB repair tools
+# ── GRUB tools in rootfs (for grub-install, grub-mkconfig) ───────────────────
+# Note: BR2_PACKAGE_GRUB2 has NO sub-target options — those belong under
+# BR2_TARGET_GRUB2_* below. The old GRUB2_TARGET_I386_PC / X86_64_EFI
+# options were invalid and have been removed.
 BR2_PACKAGE_GRUB2=y
-BR2_PACKAGE_GRUB2_TARGET_I386_PC=y       # BIOS support
-BR2_PACKAGE_GRUB2_TARGET_X86_64_EFI=y   # UEFI support
 
-# EFI boot manager
+# ── EFI / partition tooling ───────────────────────────────────────────────────
 BR2_PACKAGE_EFIBOOTMGR=y
-
-# os-prober — detects other OSes for grub-mkconfig
 BR2_PACKAGE_OS_PROBER=y
-
-# Partition management
 BR2_PACKAGE_PARTED=y
-BR2_PACKAGE_E2FSPROGS=y                  # resize2fs for ext4
-BR2_PACKAGE_BTRFS_PROGS=y               # btrfs resize
-BR2_PACKAGE_XFS_PROGS=y                 # xfs_growfs
-BR2_PACKAGE_DOSFSTOOLS=y                # mkfs.vfat for EFI
+BR2_PACKAGE_E2FSPROGS=y            # resize2fs for ext4
+BR2_PACKAGE_BTRFS_PROGS=y          # btrfs resize
+BR2_PACKAGE_XFS_PROGS=y            # xfs_growfs
+BR2_PACKAGE_DOSFSTOOLS=y           # mkfs.vfat for EFI
+BR2_PACKAGE_NTFS_3G=y              # Windows NTFS support
 
-# Windows NTFS (for Windows EFI restore)
-BR2_PACKAGE_NTFS_3G=y
-
-# Network — for paste upload + AI diagnosis
-BR2_PACKAGE_DHCPCD=y                    # DHCP client, auto IP on boot
+# ── Network ───────────────────────────────────────────────────────────────────
+BR2_PACKAGE_DHCPCD=y               # DHCP client, auto IP on boot
 BR2_PACKAGE_LIBCURL=y
 BR2_PACKAGE_LIBCURL_CURL=y
-BR2_PACKAGE_CA_CERTIFICATES=y          # HTTPS cert validation for curl
+BR2_PACKAGE_CA_CERTIFICATES=y     # HTTPS cert validation
 
-# QR code export
+# ── QR code export ────────────────────────────────────────────────────────────
 BR2_PACKAGE_QRENCODE=y
 
-# Your package
+# ── Your package ──────────────────────────────────────────────────────────────
 BR2_PACKAGE_FIX_AUTOMATION=y
 
-# Filesystem output
+# ── Filesystem output ─────────────────────────────────────────────────────────
 BR2_TARGET_ROOTFS_CPIO=y
 BR2_TARGET_ROOTFS_CPIO_GZIP=y
 
-# USB bootloader
+# ── USB bootloader (GRUB images) ──────────────────────────────────────────────
+# BR2_TARGET_GRUB2_* builds the bootloader images themselves.
+# EFI binary output: buildroot/output/images/efi-part/EFI/BOOT/bootx64.efi
+# BIOS image output: buildroot/output/images/grub.img
 BR2_TARGET_GRUB2=y
 BR2_TARGET_GRUB2_I386_PC=y
 BR2_TARGET_GRUB2_X86_64_EFI=y
+BR2_TARGET_GRUB2_BUILTIN_MODULES_EFI="boot linux ext2 fat part_msdos part_gpt normal echo test true minicmd gzio search"
