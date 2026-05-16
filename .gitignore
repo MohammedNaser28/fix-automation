@@ -1,3 +1,9 @@
 /target
 *.html
 /.venv
+test_buildroot2/
+test_buildroot/
+test_make/
+buildroot/
+.idea/
+.vscode/

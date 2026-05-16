@@ -51,8 +51,8 @@ jobs:
       - name: Download Buildroot
         run: |
           wget https://buildroot.org/downloads/buildroot-2025.02.13.tar.gz
-          tar -xf buildroot-2025.02.13.tar.gz
-          mv buildroot-2025.02.13 buildroot
+          mkdir -p buildroot
+          tar -xf buildroot-2025.02.13.tar.gz -C buildroot --strip-components=1
 
       - name: Inject binary into overlay
         run: |
