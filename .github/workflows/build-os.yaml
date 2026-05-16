@@ -64,7 +64,6 @@ jobs:
 
           chmod +x fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
 
-          # Set as PID 1
           ln -sf /usr/bin/fix-automation \
             fix-automation/os-config/rootfs_overlay/sbin/init
 
@@ -88,18 +87,16 @@ jobs:
           cp buildroot/output/images/bzImage        release/EFI/BOOT/
           cp buildroot/output/images/rootfs.cpio.gz release/EFI/BOOT/
 
-          # Deploy the EFI bootloader (output path from BR2_TARGET_GRUB2_X86_64_EFI)
           EFI_BIN="buildroot/output/images/efi-part/EFI/BOOT/bootx64.efi"
           if [ -f "$EFI_BIN" ]; then
             cp "$EFI_BIN" release/EFI/BOOT/BOOTX64.EFI
           else
-            echo "❌ ERROR: GRUB EFI binary not found at $EFI_BIN"
+            echo "ERROR: GRUB EFI binary not found at $EFI_BIN"
             echo "Available images:"
             find buildroot/output/images/ -type f | sort
             exit 1
           fi
 
-          # Create the GRUB config
           cat > release/EFI/BOOT/grub.cfg << 'EOF'
   set timeout=5
   set default=0
@@ -118,7 +115,7 @@ jobs:
     path: grub-rescue-usb.zip
     retention-days: 7
 
-# ── Release (only on git tag) ─────────────────────────────────────────
+# ── Release (only on git tag) ──────────────────────────────────────────
 - name: Create GitHub Release
   uses: softprops/action-gh-release@v2
   if: startsWith(github.ref, 'refs/tags/')
