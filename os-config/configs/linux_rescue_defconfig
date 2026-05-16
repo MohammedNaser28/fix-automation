@@ -55,7 +55,8 @@ BR2_PACKAGE_NTFS_3G=y
 
 # Network — for paste upload + AI diagnosis
 BR2_PACKAGE_DHCPCD=y                    # DHCP client, auto IP on boot
-BR2_PACKAGE_CURL=y                      # upload logs to paste.rs
+BR2_PACKAGE_LIBCURL=y
+BR2_PACKAGE_LIBCURL_CURL=y
 BR2_PACKAGE_CA_CERTIFICATES=y          # HTTPS cert validation for curl
 
 # QR code export
