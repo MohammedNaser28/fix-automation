@@ -59,8 +59,24 @@ jobs:
           cp fix-automation/target/x86_64-unknown-linux-musl/release/fix-automation \
              fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
           chmod +x fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
-          ln -sf /usr/bin/fix-automation \
-            fix-automation/os-config/rootfs_overlay/sbin/init
+          cat << 'EOF' > fix-automation/os-config/rootfs_overlay/sbin/init
+          #!/bin/sh
+          export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+          export TERM=linux
+          
+          echo "Mounting virtual filesystems..."
+          mount -t proc proc /proc
+          mount -t sysfs sys /sys
+          mount -t devtmpfs dev /dev
+          
+          echo "Starting Fix-Automation Rescue Environment..."
+          /usr/bin/fix-automation
+          
+          echo "Exiting... rebooting system in 3 seconds."
+          sleep 3
+          reboot -f
+          EOF
+          chmod +x fix-automation/os-config/rootfs_overlay/sbin/init
 
       - name: Configure Buildroot overlay path
         run: |
@@ -80,16 +96,17 @@ jobs:
           cp buildroot/output/images/bzImage        release/EFI/BOOT/
           cp buildroot/output/images/rootfs.cpio.gz release/EFI/BOOT/
 
-          EFI_BIN="buildroot/output/images/efi-part/EFI/BOOT/bootx64.efi"
-          if [ -f "$EFI_BIN" ]; then
+          EFI_BIN=$(find buildroot/output/images/ -name "*.efi" | head -n 1)
+          if [ -n "$EFI_BIN" ] && [ -f "$EFI_BIN" ]; then
+            echo "Found GRUB EFI binary at $EFI_BIN"
             cp "$EFI_BIN" release/EFI/BOOT/BOOTX64.EFI
           else
-            echo "ERROR: GRUB EFI binary not found at $EFI_BIN"
+            echo "ERROR: GRUB EFI binary not found"
             find buildroot/output/images/ -type f | sort
             exit 1
           fi
 
-          printf 'set timeout=5\nset default=0\nmenuentry "Fix-Automation Rescue (Rust)" {\n    linux  /EFI/BOOT/bzImage quiet console=tty0\n    initrd /EFI/BOOT/rootfs.cpio.gz\n}\n' \
+          printf 'set timeout=5\nset default=0\nmenuentry "Fix-Automation Rescue (Rust)" {\n    linux  /EFI/BOOT/bzImage quiet console=tty0 console=ttyS0,115200\n    initrd /EFI/BOOT/rootfs.cpio.gz\n}\n' \
             > release/EFI/BOOT/grub.cfg
 
           cd release && zip -r ../grub-rescue-usb.zip .
