@@ -40,7 +40,6 @@ jobs:
           cargo build --release --target x86_64-unknown-linux-musl
 
       # ── Buildroot ─────────────────────────────────────────────────────────
-      # Cache BEFORE download — so it can be restored first
       - name: Cache Buildroot downloads
         uses: actions/cache@v4
         with:
@@ -65,14 +64,20 @@ jobs:
 
           chmod +x fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
 
-          # Make it PID 1
+          # Set as PID 1
           ln -sf /usr/bin/fix-automation \
             fix-automation/os-config/rootfs_overlay/sbin/init
+
+      - name: Configure Buildroot overlay path
+        run: |
+          echo "BR2_ROOTFS_OVERLAY=\"$(pwd)/fix-automation/os-config/rootfs_overlay\"" \
+            >> fix-automation/os-config/configs/linux_rescue_defconfig
 
       - name: Build OS image
         run: |
           cd buildroot
-          make BR2_EXTERNAL=../fix-automation/os-config linux_rescue_defconfig
+          make BR2_EXTERNAL=$(pwd)/../fix-automation/os-config \
+               linux_rescue_defconfig
           make -j$(nproc)
 
       # ── Package ───────────────────────────────────────────────────────────
@@ -80,17 +85,19 @@ jobs:
         run: |
           mkdir -p release/EFI/BOOT
 
-          # Kernel + initramfs
           cp buildroot/output/images/bzImage        release/EFI/BOOT/
           cp buildroot/output/images/rootfs.cpio.gz release/EFI/BOOT/
 
-          # GRUB EFI bootloader (built by Buildroot)
-          cp buildroot/output/images/efi-part/EFI/BOOT/BOOTX64.EFI \
-             release/EFI/BOOT/BOOTX64.EFI
+          # GRUB EFI bootloader — copy if exists, warn if not
+          if [ -f buildroot/output/images/efi-part/EFI/BOOT/BOOTX64.EFI ]; then
+            cp buildroot/output/images/efi-part/EFI/BOOT/BOOTX64.EFI \
+               release/EFI/BOOT/BOOTX64.EFI
+          else
+            echo "WARNING: BOOTX64.EFI not found — UEFI boot may not work"
+          fi
 
-          # GRUB config — tells GRUB how to load kernel + initramfs
           cat > release/EFI/BOOT/grub.cfg << 'EOF'
-          set timeout=0
+          set timeout=3
           set default=0
           menuentry "fix-automation rescue" {
               linux  /EFI/BOOT/bzImage quiet console=tty0
