@@ -52,18 +52,18 @@ jobs:
           mkdir -p buildroot
           tar -xf buildroot-2025.02.13.tar.gz -C buildroot --strip-components=1
 
-      - name: Prepare Rootfs Overlay
+      - name: Inject binary into overlay
         run: |
-          # Create the overlay directory structure
-          mkdir -p fix-automation/os-config/rootfs_overlay/etc
-          
-          # Copy your existing inittab file into the overlay
-          # (Adjust the source path './fix-automation/inittab' if you saved it somewhere else in your repo)
-          cp fix-automation/inittab fix-automation/os-config/rootfs_overlay/etc/inittab
+          # Since inittab is already in the repo's overlay, we just need to drop the Rust binary in!
+          mkdir -p fix-automation/os-config/rootfs_overlay/usr/bin
+          cp fix-automation/target/x86_64-unknown-linux-musl/release/fix-automation \
+             fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
+          chmod +x fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
 
       - name: Build OS image
         run: |
           cd buildroot
+          # Point BR2_EXTERNAL to the root of your beautiful tree
           make BR2_EXTERNAL=$(pwd)/../fix-automation/os-config \
                linux_rescue_defconfig
           make -j$(nproc)
