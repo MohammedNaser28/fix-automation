@@ -52,12 +52,32 @@ jobs:
           mkdir -p buildroot
           tar -xf buildroot-2025.02.13.tar.gz -C buildroot --strip-components=1
 
-      - name: Inject binary into overlay
+      - name: Create Kernel Fragment (Fixes the Black Screen Handover)
         run: |
-          mkdir -p fix-automation/os-config/rootfs_overlay/usr/bin
-          cp fix-automation/target/x86_64-unknown-linux-musl/release/fix-automation \
-             fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
-          chmod +x fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
+          mkdir -p fix-automation/os-config/configs
+          cat << 'EOF' > fix-automation/os-config/configs/linux.fragment
+          CONFIG_DRM=y
+          CONFIG_DRM_SIMPLEDRM=y
+          CONFIG_SYSFB_SIMPLEFB=y
+          CONFIG_FRAMEBUFFER_CONSOLE=y
+          CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
+          CONFIG_X86_AMD_PLATFORM_DEVICE=y
+          CONFIG_NVME_CORE=y
+          CONFIG_BLK_DEV_NVME=y
+          EOF
+
+      - name: Prepare Rootfs Overlay & Inittab
+        run: |
+          mkdir -p fix-automation/os-config/rootfs_overlay/etc
+          # Create the inittab to automatically launch the Rust TUI after BusyBox init
+          cat << 'EOF' > fix-automation/os-config/rootfs_overlay/etc/inittab
+          ::sysinit:/etc/init.d/rcS
+          ::respawn:env TERM=linux /usr/bin/fix-automation
+          ::ctrlaltdel:/sbin/reboot
+          ::shutdown:/etc/init.d/rcK
+          ::restart:/sbin/init
+          EOF
+          # Note: The fix-automation.mk package handles copying the actual binary.
 
       - name: Build OS image
         run: |
@@ -82,7 +102,8 @@ jobs:
             exit 1
           fi
 
-          printf 'set timeout=5\nset default=0\nmenuentry "Fix-Automation Rescue (Rust)" {\n    linux  /EFI/BOOT/bzImage console=tty0 earlycon=efifb\n    initrd /EFI/BOOT/rootfs.cpio.gz\n}\n' \
+          # Creates grub.cfg with loglevel=7 and earlycon for debugging. NO nomodeset.
+          printf 'set timeout=5\nset default=0\nmenuentry "Fix-Automation Rescue (Rust)" {\n    linux  /EFI/BOOT/bzImage console=tty0 loglevel=7 earlycon=efifb\n    initrd /EFI/BOOT/rootfs.cpio.gz\n}\n' \
             > release/EFI/BOOT/grub.cfg
 
           cd release && zip -r ../grub-rescue-usb.zip .
