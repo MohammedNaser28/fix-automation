@@ -55,33 +55,9 @@ jobs:
       - name: Inject binary into overlay
         run: |
           mkdir -p fix-automation/os-config/rootfs_overlay/usr/bin
-          mkdir -p fix-automation/os-config/rootfs_overlay/sbin
           cp fix-automation/target/x86_64-unknown-linux-musl/release/fix-automation \
              fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
           chmod +x fix-automation/os-config/rootfs_overlay/usr/bin/fix-automation
-          cat << 'EOF' > fix-automation/os-config/rootfs_overlay/sbin/init
-          #!/bin/sh
-          export PATH=/sbin:/bin:/usr/sbin:/usr/bin
-          export TERM=linux
-          
-          echo "Mounting virtual filesystems..."
-          mount -t proc proc /proc
-          mount -t sysfs sys /sys
-          mount -t devtmpfs dev /dev
-          
-          echo "Starting Fix-Automation Rescue Environment..."
-          /usr/bin/fix-automation
-          
-          echo "Exiting... rebooting system in 3 seconds."
-          sleep 3
-          reboot -f
-          EOF
-          chmod +x fix-automation/os-config/rootfs_overlay/sbin/init
-
-      - name: Configure Buildroot overlay path
-        run: |
-          echo "BR2_ROOTFS_OVERLAY=\"$(pwd)/fix-automation/os-config/rootfs_overlay\"" \
-            >> fix-automation/os-config/configs/linux_rescue_defconfig
 
       - name: Build OS image
         run: |
