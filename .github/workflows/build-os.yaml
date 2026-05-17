@@ -52,32 +52,14 @@ jobs:
           mkdir -p buildroot
           tar -xf buildroot-2025.02.13.tar.gz -C buildroot --strip-components=1
 
-      - name: Create Kernel Fragment (Fixes the Black Screen Handover)
+      - name: Prepare Rootfs Overlay
         run: |
-          mkdir -p fix-automation/os-config/configs
-          cat << 'EOF' > fix-automation/os-config/configs/linux.fragment
-          CONFIG_DRM=y
-          CONFIG_DRM_SIMPLEDRM=y
-          CONFIG_SYSFB_SIMPLEFB=y
-          CONFIG_FRAMEBUFFER_CONSOLE=y
-          CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
-          CONFIG_X86_AMD_PLATFORM_DEVICE=y
-          CONFIG_NVME_CORE=y
-          CONFIG_BLK_DEV_NVME=y
-          EOF
-
-      - name: Prepare Rootfs Overlay & Inittab
-        run: |
+          # Create the overlay directory structure
           mkdir -p fix-automation/os-config/rootfs_overlay/etc
-          # Create the inittab to automatically launch the Rust TUI after BusyBox init
-          cat << 'EOF' > fix-automation/os-config/rootfs_overlay/etc/inittab
-          ::sysinit:/etc/init.d/rcS
-          ::respawn:env TERM=linux /usr/bin/fix-automation
-          ::ctrlaltdel:/sbin/reboot
-          ::shutdown:/etc/init.d/rcK
-          ::restart:/sbin/init
-          EOF
-          # Note: The fix-automation.mk package handles copying the actual binary.
+          
+          # Copy your existing inittab file into the overlay
+          # (Adjust the source path './fix-automation/inittab' if you saved it somewhere else in your repo)
+          cp fix-automation/inittab fix-automation/os-config/rootfs_overlay/etc/inittab
 
       - name: Build OS image
         run: |
