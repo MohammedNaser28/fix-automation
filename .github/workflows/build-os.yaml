@@ -106,7 +106,7 @@ jobs:
             exit 1
           fi
 
-          printf 'set timeout=5\nset default=0\nmenuentry "Fix-Automation Rescue (Rust)" {\n    linux  /EFI/BOOT/bzImage quiet console=tty0 console=ttyS0,115200\n    initrd /EFI/BOOT/rootfs.cpio.gz\n}\n' \
+          printf 'set timeout=5\nset default=0\nmenuentry "Fix-Automation Rescue (Rust)" {\n    linux  /EFI/BOOT/bzImage console=tty0 earlycon=efifb\n    initrd /EFI/BOOT/rootfs.cpio.gz\n}\n' \
             > release/EFI/BOOT/grub.cfg
 
           cd release && zip -r ../grub-rescue-usb.zip .
