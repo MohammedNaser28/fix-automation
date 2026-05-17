@@ -1,0 +1,5 @@
+::sysinit:/etc/init.d/rcS
+::respawn:env TERM=linux /usr/bin/fix-automation
+::ctrlaltdel:/sbin/reboot
+::shutdown:/etc/init.d/rcK
+::restart:/sbin/init

@@ -7,3 +7,7 @@ test_make/
 buildroot/
 .idea/
 .vscode/
+tmp/
+tmp2/
+qemu-test-images/
+*.zip

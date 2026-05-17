@@ -14,18 +14,24 @@ BR2_LINUX_KERNEL=y
 BR2_LINUX_KERNEL_CUSTOM_VERSION=y
 BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE="6.12.81"
 BR2_LINUX_KERNEL_USE_ARCH_DEFAULT_CONFIG=y
-BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_LINUX_RESCUE_PATH)/configs/linux.fragment"
 BR2_LINUX_KERNEL_BZIMAGE=y
 
 # ── Init ──────────────────────────────────────────────────────────────────────
-# Your Rust binary IS init — no init system needed
-BR2_INIT_NONE=y
+BR2_INIT_BUSYBOX=y
+BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_LINUX_RESCUE_PATH)/rootfs_overlay"
 
-# ── Core utils ────────────────────────────────────────────────────────────────
+# ── Core utils & Hardware Management ──────────────────────────────────────────
+BR2_ROOTFS_DEVICE_CREATION_DYNAMIC_MDEV=y
 BR2_PACKAGE_BUSYBOX=y
 BR2_PACKAGE_UTIL_LINUX=y
 BR2_PACKAGE_UTIL_LINUX_BINARIES=y   # lsblk, blkid, findmnt
 BR2_PACKAGE_UTIL_LINUX_MOUNT=y      # mount/umount
+
+# ── Graphics & Firmware ───────────────────────────────────────────────────────
+BR2_PACKAGE_LINUX_FIRMWARE=y
+BR2_PACKAGE_LINUX_FIRMWARE_I915=y
+BR2_PACKAGE_LINUX_FIRMWARE_AMDGPU=y
+BR2_PACKAGE_LINUX_FIRMWARE_RADEON=y
 
 # ── GRUB tools in rootfs (for grub-install, grub-mkconfig) ───────────────────
 # Note: BR2_PACKAGE_GRUB2 has NO sub-target options — those belong under
