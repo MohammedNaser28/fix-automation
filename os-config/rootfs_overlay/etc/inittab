@@ -1,5 +1,5 @@
 ::sysinit:/etc/init.d/rcS
-console::askfirst:-/bin/sh
+tty1::respawn:env PATH=/usr/bin:/usr/sbin:/bin:/sbin TERM=linux setsid /usr/bin/fix-automation
 ::ctrlaltdel:/sbin/reboot
 ::shutdown:/etc/init.d/rcK
 ::restart:/sbin/init

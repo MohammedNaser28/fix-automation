@@ -22,7 +22,7 @@ BR2_INIT_BUSYBOX=y
 BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_LINUX_RESCUE_PATH)/rootfs_overlay"
 
 # ── Core utils & Hardware Management ──────────────────────────────────────────
-BR2_ROOTFS_DEVICE_CREATION_DYNAMIC_MDEV=y
+BR2_ROOTFS_DEVICE_CREATION_DYNAMIC_EUDEV=y
 BR2_PACKAGE_BUSYBOX=y
 BR2_PACKAGE_UTIL_LINUX=y
 BR2_PACKAGE_UTIL_LINUX_BINARIES=y   # lsblk, blkid, findmnt
@@ -74,4 +74,3 @@ BR2_TARGET_GRUB2=y
 BR2_TARGET_GRUB2_I386_PC=y
 BR2_TARGET_GRUB2_X86_64_EFI=y
 BR2_TARGET_GRUB2_BUILTIN_MODULES_EFI="boot linux ext2 fat part_msdos part_gpt normal echo test true minicmd gzio search"
-
