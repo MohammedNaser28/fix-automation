@@ -74,3 +74,8 @@ BR2_TARGET_GRUB2=y
 BR2_TARGET_GRUB2_I386_PC=y
 BR2_TARGET_GRUB2_X86_64_EFI=y
 BR2_TARGET_GRUB2_BUILTIN_MODULES_EFI="boot linux ext2 fat part_msdos part_gpt normal echo test true minicmd gzio search"
+
+# --- Terminal UI Support (Terminfo database for Rust) ---
+BR2_PACKAGE_NCURSES=y
+BR2_PACKAGE_NCURSES_WCHAR=y
+BR2_PACKAGE_NCURSES_TARGET_PROGS=y
